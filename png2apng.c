@@ -154,19 +154,27 @@ struct png_fcTL *png_fcTL_read(struct png_chunk *pc)
 
     memcpy(&(ret->sequence_number), &(pc->data[0]), 4);
     ret->sequence_number = ntohl(ret->sequence_number);
+
     memcpy(&(ret->width), &(pc->data[4]), 4);
     ret->width = ntohl(ret->width);
+
     memcpy(&(ret->height), &(pc->data[8]), 4);
     ret->height = ntohl(ret->height);
+
     memcpy(&(ret->x_offset), &(pc->data[12]), 4);
     ret->x_offset = ntohl(ret->x_offset);
+
     memcpy(&(ret->y_offset), &(pc->data[16]), 4);
     ret->y_offset = ntohl(ret->y_offset);
+
     memcpy(&(ret->delay_num), &(pc->data[20]), 2);
     ret->delay_num = ntohs(ret->delay_num);
+
     memcpy(&(ret->delay_den), &(pc->data[22]), 2);
     ret->delay_den = ntohs(ret->delay_den);
+
     memcpy(&(ret->dispose_op), &(pc->data[24]), 1);
+
     memcpy(&(ret->blend_op), &(pc->data[25]), 1);
 
     return ret;
@@ -174,8 +182,8 @@ struct png_fcTL *png_fcTL_read(struct png_chunk *pc)
 
 void png_fcTL_print(struct png_fcTL *fctl)
 {
-    printf("fcTL: seq_num: %d  w: %d  h: %d\n",
-           fctl->sequence_number, fctl->width, fctl->height);
+    printf("fcTL: seq_num: %d  w: %d  h: %d  delay: %d/%d\n",
+           fctl->sequence_number, fctl->width, fctl->height, fctl->delay_num, fctl->delay_den);
 }
 
 int main(int argc, char *argv[])
