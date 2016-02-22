@@ -13,4 +13,7 @@ clean:
 test:
 	./png2apng test.png
 
-.PHONY: clean test
+test2:
+	./png2apng test.apng
+
+.PHONY: clean test test2
