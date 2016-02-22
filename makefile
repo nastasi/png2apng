@@ -8,7 +8,7 @@ png2apng: png2apng.c
 	gcc -ggdb -Wall -o png2apng png2apng.c -lz
 
 clean:
-	rm -rf $(BIN)
+	rm -rf $(BIN) core
 
 test:
 	./png2apng test.png
