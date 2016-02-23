@@ -1,19 +1,29 @@
-BIN=png2apng
+INCLUDES=subpng.h
+BIN_SRC=pngtest.c png2apng.c
+BINARIES=$(BIN_SRC:.c=)
+OBJ_SRC=subpng.c
+OBJECTS=$(OBJ_SRC:.c=.o)
 
-ALL: $(BIN)
+CC=gcc
+C_FLAGS=-Wall -I.
+LD_FLAGS=$(OBJECTS) -lz
 
+ALL: $(BINARIES) $(OBJECTS)
 
+%.o: %.c $(INCLUDES)
+	$(CC) -c $(C_FLAGS) $< -o $@
 
-png2apng: png2apng.c
-	gcc -ggdb -Wall -o png2apng png2apng.c -lz
+$(BINARIES): $(INCLUDES) $(OBJECTS)
+	gcc $(C_FLAGS) -o $@ $(LD_FLAGS) $@.c
 
 clean:
-	rm -rf $(BIN) core
+	echo "$(BIN_SRC)"
+	rm -rf $(BINARIES) $(OBJECTS) core
 
 test:
-	./png2apng test.png
+	./pngtest test.png
 
 test2:
-	./png2apng test.apng
+	./pngtest test.apng
 
 .PHONY: clean test test2
