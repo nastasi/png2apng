@@ -13,7 +13,7 @@ ALL: $(BINARIES) $(OBJECTS)
 %.o: %.c $(INCLUDES)
 	$(CC) -c $(C_FLAGS) $< -o $@
 
-$(BINARIES): $(INCLUDES) $(OBJECTS)
+$(BINARIES): $(INCLUDES) $(OBJECTS) $(BIN_SRC)
 	gcc $(C_FLAGS) -o $@ $(LD_FLAGS) $@.c
 
 clean:
