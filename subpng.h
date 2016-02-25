@@ -73,12 +73,14 @@ void              png_chunk_print(struct png_chunk *pc);
 struct png_IHDR  *png_IHDR_read(struct png_chunk *pc);
 void              png_IHDR_print(struct png_IHDR *ihdr);
 
-struct png_acTL *png_acTL_create(uint32_t num_frames, uint32_t num_plays);
+struct png_acTL  *png_acTL_create(uint32_t num_frames, uint32_t num_plays);
 struct png_acTL  *png_acTL_read(struct png_chunk *pc);
 struct png_chunk *png_acTL_dump(struct png_acTL *actl);
 void              png_acTL_print(struct png_acTL *acTL);
 
+struct png_fcTL  *png_fcTL_create(struct png_fcTL *in);
 struct png_fcTL  *png_fcTL_read(struct png_chunk *pc);
+struct png_chunk *png_fcTL_dump(struct png_fcTL *fctl);
 void              png_fcTL_print(struct png_fcTL *fctl);
 
 struct png_IEND  *png_IEND_create(void);
@@ -90,4 +92,7 @@ int               png_write(struct png_image *png, char *filename);
 void              png_print(struct png_image *png);
 int               png_chunk_add_from_png(struct png_image *png_out, struct png_image *png_in, int id);
 int               png_chunk_add(struct png_image *png, struct png_chunk *pc, void *spec);
+int               png_chunk_by_type(struct png_image *png, char *type, int start_id);
+int png_width(struct png_image *png);
+int png_height(struct png_image *png);
 #endif

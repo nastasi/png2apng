@@ -121,12 +121,12 @@ struct png_chunk *png_acTL_dump(struct png_acTL *actl)
         if ((pc = calloc(1, sizeof(struct png_chunk))) == NULL) {
             return NULL;
         }
+        pc->len = 8;
 
-        if ((bf = malloc(20)) == NULL) {
+        if ((bf = malloc(pc->len + 4)) == NULL) {
             return NULL;
         }
 
-        pc->len = 8;
         strcpy(pc->type, "acTL");
 
         memcpy(&(bf[0]), "acTL", 4);
@@ -134,7 +134,7 @@ struct png_chunk *png_acTL_dump(struct png_acTL *actl)
         *((uint32_t *)(&bf[8])) = htonl(actl->num_plays);
 
         crc = crc32(0L, Z_NULL, 0);
-        crc = crc32(crc, &(bf[0]), 8 + 4);
+        crc = crc32(crc, &(bf[0]), pc->len + 4);
 
         pc->content = bf;
         pc->data = &(pc->content[4]);
@@ -188,7 +188,7 @@ void png_acTL_print(struct png_acTL *acTL)
    24    dispose_op            (byte)           Type of frame area disposal to be done after rendering this frame
    25    blend_op              (byte)           Type of frame area rendering for this frame
 */
-struct png_fcTL *png_fcTL_read(struct png_chunk *pc)
+struct png_fcTL *png_fcTL_create(struct png_fcTL *fctl_in)
 {
     struct png_fcTL *ret;
 
@@ -196,6 +196,20 @@ struct png_fcTL *png_fcTL_read(struct png_chunk *pc)
         return NULL;
     }
     strcpy(ret->type, "fcTL");
+    if (fctl_in) {
+        memcpy(ret, fctl_in, sizeof(struct png_fcTL));
+    }
+
+    return ret;
+}
+
+struct png_fcTL *png_fcTL_read(struct png_chunk *pc)
+{
+    struct png_fcTL *ret;
+
+    if ((ret = png_fcTL_create(NULL)) == NULL) {
+        return NULL;
+    }
 
     memcpy(&(ret->sequence_number), &(pc->data[0]), 4);
     ret->sequence_number = ntohl(ret->sequence_number);
@@ -224,6 +238,53 @@ struct png_fcTL *png_fcTL_read(struct png_chunk *pc)
 
     return ret;
 }
+
+struct png_chunk *png_fcTL_dump(struct png_fcTL *fctl)
+{
+    struct png_chunk *pc = NULL;
+    uint8_t *bf = NULL;
+    uLong crc;
+
+    do {
+        if ((pc = calloc(1, sizeof(struct png_chunk))) == NULL) {
+            return NULL;
+        }
+        pc->len = 26;
+
+        if ((bf = malloc(pc->len + 4)) == NULL) {
+            return NULL;
+        }
+        strcpy(pc->type, "fcTL");
+        memcpy(&(bf[0]), "fcTL", 4);
+        *((uint32_t *)(&bf[4])) = htonl(fctl->sequence_number);
+        *((uint32_t *)(&bf[8])) = htonl(fctl->width);
+        *((uint32_t *)(&bf[12])) = htonl(fctl->height);
+        *((uint32_t *)(&bf[16])) = htonl(fctl->x_offset);
+        *((uint32_t *)(&bf[20])) = htonl(fctl->y_offset);
+        *((uint16_t *)(&bf[24])) = htons(fctl->delay_num);
+        *((uint16_t *)(&bf[26])) = htons(fctl->delay_den);
+        *((uint8_t *)(&bf[28])) = fctl->dispose_op;
+        *((uint8_t *)(&bf[29])) = fctl->blend_op;
+
+        crc = crc32(0L, Z_NULL, 0);
+        crc = crc32(crc, &(bf[0]), pc->len + 4);
+
+        pc->content = bf;
+        pc->data = &(pc->content[4]);
+        pc->crc = crc;
+
+        return pc;
+    } while (0);
+
+    if (pc)
+        free(pc);
+    if (bf)
+        free(bf);
+    return NULL;
+}
+
+
+
 
 void png_fcTL_print(struct png_fcTL *fctl)
 {
@@ -415,6 +476,28 @@ int png_write(struct png_image *png, char *filename)
     return TRUE;
 }
 
+int png_width(struct png_image *png)
+{
+    int i;
+    for (i = 0 ; i < png->chunk_n ; i++) {
+        if (strcmp(png->chunk_type[i], "IHDR") == 0) {
+            return ((struct png_IHDR *)png->chunk_data[i])->w;
+        }
+    }
+    return -1;
+}
+
+int png_height(struct png_image *png)
+{
+    int i;
+    for (i = 0 ; i < png->chunk_n ; i++) {
+        if (strcmp(png->chunk_type[i], "IHDR") == 0) {
+            return ((struct png_IHDR *)png->chunk_data[i])->h;
+        }
+    }
+    return -1;
+}
+
 void png_print(struct png_image *png)
 {
     int i;
@@ -432,4 +515,16 @@ void png_print(struct png_image *png)
             png_chunk_print(png->chunk[i]);
         }
     }
+}
+
+int png_chunk_by_type(struct png_image *png, char *type, int start_id)
+{
+    int i;
+
+    for (i = start_id ; i < png->chunk_n ; i++) {
+        if (strcmp(png->chunk_type[i], type) == 0) {
+            return i;
+        }
+    }
+    return -1;
 }
