@@ -22,6 +22,7 @@ struct png_chunk {
 };
 
 struct png_IHDR {
+    char type[5];
     uint32_t w;
     uint32_t h;
     uint8_t depth;
@@ -31,14 +32,20 @@ struct png_IHDR {
 };
 
 struct png_acTL {
+    char type[5];
     uint32_t num_frames;
     uint32_t num_plays;
+};
+
+struct png_IEND {
+    char type[5];
 };
 
 /*
   from wiki.mozilla.org
 */
 struct png_fcTL {
+    char type[5];
     uint32_t sequence_number; /* Sequence number of the animation chunk, starting from 0 */
     uint32_t width;           /* Width of the following frame */
     uint32_t height;          /* Height of the following frame */
@@ -60,15 +67,27 @@ struct png_image {
 };
 
 struct png_chunk *png_chunk_read(FILE *fp);
-void png_chunk_print(struct png_chunk *pc);
-struct png_IHDR *png_IHDR_read(struct png_chunk *pc);
-void png_IHDR_print(struct png_IHDR *ihdr);
-struct png_acTL *png_acTL_read(struct png_chunk *pc);
-void png_acTL_print(struct png_acTL *acTL);
-struct png_fcTL *png_fcTL_read(struct png_chunk *pc);
-void png_fcTL_print(struct png_fcTL *fctl);
+int               png_chunk_write(FILE *fp, struct png_chunk *pc);
+void              png_chunk_print(struct png_chunk *pc);
+
+struct png_IHDR  *png_IHDR_read(struct png_chunk *pc);
+void              png_IHDR_print(struct png_IHDR *ihdr);
+
+struct png_acTL *png_acTL_create(uint32_t num_frames, uint32_t num_plays);
+struct png_acTL  *png_acTL_read(struct png_chunk *pc);
+struct png_chunk *png_acTL_dump(struct png_acTL *actl);
+void              png_acTL_print(struct png_acTL *acTL);
+
+struct png_fcTL  *png_fcTL_read(struct png_chunk *pc);
+void              png_fcTL_print(struct png_fcTL *fctl);
+
+struct png_IEND  *png_IEND_create(void);
+struct png_chunk *png_IEND_dump(struct png_IEND *iend);
+
 struct png_image *png_create(void);
 struct png_image *png_load(char *fname);
-void png_print(struct png_image *png);
-int png_chunk_add_from_png(struct png_image *png_out, struct png_image *png_in, int id);
+int               png_write(struct png_image *png, char *filename);
+void              png_print(struct png_image *png);
+int               png_chunk_add_from_png(struct png_image *png_out, struct png_image *png_in, int id);
+int               png_chunk_add(struct png_image *png, struct png_chunk *pc, void *spec);
 #endif

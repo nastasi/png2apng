@@ -5,18 +5,19 @@
 
 int main(int argc, char *argv[])
 {
-    FILE *fout;
+    char *foutname;
     struct png_image *png_out, *png_in;
+    struct png_acTL *actl;
+    struct png_IEND *iend;
+    struct png_chunk *pc;
+
     int i;
 
-    if (fopen(argv[1], "rb")) {
+    foutname = argv[1];
+
+    if (fopen(foutname, "rb")) {
         fprintf(stderr, "File %s already exists.\n", argv[1]);
         exit(1);
-    }
-
-    if ((fout = fopen(argv[1], "wb")) == NULL) {
-        fprintf(stderr, "Output file %s open fails.\n", argv[1]);
-        exit(2);
     }
 
     if ((png_out = png_create()) == NULL) {
@@ -29,10 +30,24 @@ int main(int argc, char *argv[])
 
         if (i == 2) {
             png_chunk_add_from_png(png_out, png_in, 0);
+            actl = png_acTL_create(argc - 1, 0);
+            if ((pc = png_acTL_dump(actl)) == NULL)
+                exit(4);
+            png_chunk_add(png_out, pc, actl);
         }
     }
 
+    if ((iend = png_IEND_create()) == NULL)
+        exit (5);
+    if ((pc = png_IEND_dump(iend)) == NULL)
+        exit(6);
+
+    png_chunk_add(png_out, pc, iend);
+
+    png_print(png_out);
+
+    png_write(png_out, foutname);
+
     printf("Finished\n");
-    fclose(fout);
     exit(0);
 }

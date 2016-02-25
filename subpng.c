@@ -1,5 +1,13 @@
 #include "subpng.h"
 
+/*
+  4 (type + content) len
+  4 type
+  N content
+  4 CRC (calculated on
+*/
+static unsigned char subpng_ref_head[] = { 137, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A };
+
 struct png_chunk *png_chunk_read(FILE *fp)
 {
     uLong crc;
@@ -37,6 +45,25 @@ struct png_chunk *png_chunk_read(FILE *fp)
     return pc;
 }
 
+int png_chunk_write(FILE *fp, struct png_chunk *pc)
+{
+    char *bf[4];
+
+    *((uint32_t *)bf) = htonl(pc->len);
+    if (fwrite(bf, 1, 4, fp) != 4)
+        return FALSE;
+
+    if (fwrite(pc->content, 1, pc->len + 4 , fp) != pc->len + 4)
+        return FALSE;
+
+    *((uint32_t *)bf) = htonl(pc->crc);
+
+    if (fwrite(bf, 1, 4, fp) != 4)
+        return FALSE;
+
+    return TRUE;
+}
+
 void png_chunk_print(struct png_chunk *pc)
 {
     printf("%s: len: %d (unmanaged)\n", pc->type, pc->len);
@@ -60,7 +87,6 @@ struct png_IHDR *png_IHDR_read(struct png_chunk *pc)
     memcpy(&(ret->filter), &(pc->data[10]), 1);
     memcpy(&(ret->interl), &(pc->data[11]), 1);
 
-
     return (ret);
 }
 
@@ -70,6 +96,60 @@ void png_IHDR_print(struct png_IHDR *ihdr)
     printf("IHDR: w: %d  h: %d  depth: %d  ctype: %d\n", ihdr->w, ihdr->h, ihdr->depth, ihdr->ctype);
 }
 
+struct png_acTL *png_acTL_create(uint32_t num_frames, uint32_t num_plays)
+{
+    struct png_acTL *ret;
+
+    if ((ret = (struct png_acTL *)malloc(sizeof(struct png_acTL))) == NULL) {
+        return NULL;
+    }
+    strcpy(ret->type, "fcTL");
+
+    ret->num_frames = num_frames;
+    ret->num_plays = num_plays;
+
+    return (ret);
+}
+
+struct png_chunk *png_acTL_dump(struct png_acTL *actl)
+{
+    struct png_chunk *pc = NULL;
+    uint8_t *bf = NULL;
+    uLong crc;
+
+    do {
+        if ((pc = calloc(1, sizeof(struct png_chunk))) == NULL) {
+            return NULL;
+        }
+
+        if ((bf = malloc(20)) == NULL) {
+            return NULL;
+        }
+
+        pc->len = 8;
+        strcpy(pc->type, "acTL");
+
+        memcpy(&(bf[0]), "acTL", 4);
+        *((uint32_t *)(&bf[4])) = htonl(actl->num_frames);
+        *((uint32_t *)(&bf[8])) = htonl(actl->num_plays);
+
+        crc = crc32(0L, Z_NULL, 0);
+        crc = crc32(crc, &(bf[0]), 8 + 4);
+
+        pc->content = bf;
+        pc->data = &(pc->content[4]);
+        pc->crc = crc;
+
+        return pc;
+    } while (0);
+
+    if (pc)
+        free(pc);
+    if (bf)
+        free(bf);
+    return NULL;
+}
+
 struct png_acTL *png_acTL_read(struct png_chunk *pc)
 {
     struct png_acTL *ret;
@@ -77,6 +157,7 @@ struct png_acTL *png_acTL_read(struct png_chunk *pc)
     if ((ret = (struct png_acTL *)malloc(sizeof(struct png_acTL))) == NULL) {
         return NULL;
     }
+    strcpy(ret->type, "acTL");
 
     memcpy(&(ret->num_frames), pc->data, 4);
     ret->num_frames = ntohl(ret->num_frames);
@@ -114,6 +195,7 @@ struct png_fcTL *png_fcTL_read(struct png_chunk *pc)
     if ((ret = (struct png_fcTL *)malloc(sizeof(struct png_fcTL))) == NULL) {
         return NULL;
     }
+    strcpy(ret->type, "fcTL");
 
     memcpy(&(ret->sequence_number), &(pc->data[0]), 4);
     ret->sequence_number = ntohl(ret->sequence_number);
@@ -149,35 +231,107 @@ void png_fcTL_print(struct png_fcTL *fctl)
            fctl->sequence_number, fctl->width, fctl->height, fctl->delay_num, fctl->delay_den);
 }
 
+
+
+
+struct png_IEND *png_IEND_create(void)
+{
+    struct png_IEND *ret;
+
+    if ((ret = (struct png_IEND *)malloc(sizeof(struct png_IEND))) == NULL) {
+        return NULL;
+    }
+    strcpy(ret->type, "IEND");
+
+    return (ret);
+}
+
+struct png_chunk *png_IEND_dump(struct png_IEND *iend)
+{
+    struct png_chunk *pc = NULL;
+    uint8_t *bf = NULL;
+    uLong crc;
+
+    do {
+        if ((pc = calloc(1, sizeof(struct png_chunk))) == NULL) {
+            return NULL;
+        }
+
+        if ((bf = malloc(20)) == NULL) {
+            return NULL;
+        }
+
+        pc->len = 0;
+        strcpy(pc->type, "IEND");
+
+        memcpy(&(bf[0]), "IEND", 4);
+
+        crc = crc32(0L, Z_NULL, 0);
+        crc = crc32(crc, &(bf[0]), 4);
+
+        pc->content = bf;
+        pc->data = &(pc->content[4]);
+        pc->crc = crc;
+
+        return pc;
+    } while (0);
+
+    if (pc)
+        free(pc);
+    if (bf)
+        free(bf);
+    return NULL;
+}
+
+int png_IEND_write(FILE *fp, struct png_IEND *iend)
+{
+    char *bf[64];
+    struct png_chunk *pc;
+
+    if ((pc = png_IEND_dump(iend)) == NULL) {
+        return FALSE;
+    }
+
+    *((uint32_t *)(&bf[0])) = htonl(pc->len);
+    memcpy(&(bf[4]), pc->content, pc->len + 4);
+    *((uint32_t *)(&bf[pc->len + 8])) = htonl(pc->crc);
+
+    if (fwrite(bf, 1, pc->len + 8, fp) != pc->len + 8)
+        return FALSE;
+
+    return TRUE;
+}
+
 struct png_image *png_create(void)
 {
     return (calloc(1, sizeof(struct png_image)));
 }
 
-int png_chunk_add(struct png_image *png, struct png_chunk *pc)
+int png_chunk_add(struct png_image *png, struct png_chunk *pc, void *spec)
 {
-    void *chunk;
+    if (spec == NULL) {
+        if (strcmp(pc->type, "IHDR") == 0) {
+            if ((spec = (void *)png_IHDR_read(pc)) == NULL) {
+                return FALSE;
+            }
+        }
+        else if (strcmp(pc->type, "acTL") == 0) {
+            if ((spec = (void *)png_acTL_read(pc)) == NULL) {
+                return FALSE;
+            }
+        }
+        else if (strcmp(pc->type, "fcTL") == 0) {
+            if ((spec = (void *)png_fcTL_read(pc)) == NULL) {
+                return FALSE;
+            }
+        }
+        else {
+            spec = NULL;
+        }
+    }
 
-    if (strcmp(pc->type, "IHDR") == 0) {
-        if ((chunk = (void *)png_IHDR_read(pc)) == NULL) {
-            return FALSE;
-        }
-    }
-    else if (strcmp(pc->type, "acTL") == 0) {
-        if ((chunk = (void *)png_acTL_read(pc)) == NULL) {
-            return FALSE;
-        }
-    }
-    else if (strcmp(pc->type, "fcTL") == 0) {
-        if ((chunk = (void *)png_fcTL_read(pc)) == NULL) {
-            return FALSE;
-        }
-    }
-    else {
-        chunk = NULL;
-    }
     png->chunk[png->chunk_n] = pc;
-    png->chunk_data[png->chunk_n] = chunk;
+    png->chunk_data[png->chunk_n] = spec;
     strcpy(png->chunk_type[png->chunk_n], pc->type);
     png->chunk_n++;
 
@@ -197,7 +351,7 @@ int png_chunk_add_from_png(struct png_image *png_out, struct png_image *png_in, 
 struct png_image *png_load(char *fname)
 {
     FILE *fp = NULL;
-    unsigned char head[8], ref_head[] = { 137, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A };
+    unsigned char head[8];
     int failure = FALSE;
     struct png_chunk *pc;
 
@@ -215,7 +369,7 @@ struct png_image *png_load(char *fname)
             break;
         }
 
-        if (memcmp(head, ref_head, 8) != 0) {
+        if (memcmp(head, subpng_ref_head, 8) != 0) {
             break;
         }
 
@@ -224,7 +378,7 @@ struct png_image *png_load(char *fname)
                 failure = TRUE;
                 break;
             }
-            png_chunk_add(ret, pc);
+            png_chunk_add(ret, pc, NULL);
         } while (strcmp(pc->type, "IEND") != 0);
 
         if (failure) {
@@ -240,6 +394,25 @@ struct png_image *png_load(char *fname)
         fclose(fp);
 
     return NULL;
+}
+
+int png_write(struct png_image *png, char *filename)
+{
+    FILE *fp;
+    int i;
+
+    if ((fp = fopen(filename, "wb")) == NULL)
+        return FALSE;
+
+    if (fwrite(subpng_ref_head, 1, 8, fp) != 8)
+        return FALSE;
+
+    for (i = 0 ; i < png->chunk_n ; i++) {
+        png_chunk_write(fp, png->chunk[i]);
+    }
+
+    fclose(fp);
+    return TRUE;
 }
 
 void png_print(struct png_image *png)
