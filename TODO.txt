@@ -1,0 +1,3 @@
+TODO
+. grab time and mode from image name
+. manage multiple .IDAT in single png source

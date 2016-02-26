@@ -59,7 +59,7 @@ struct png_fcTL {
 
 #define SUBPNG_MAXCHUNK 1024
 
-struct png_image {
+struct png_img {
     void *chunk[SUBPNG_MAXCHUNK];
     char chunk_type[SUBPNG_MAXCHUNK][5];
     void *chunk_data[SUBPNG_MAXCHUNK];
@@ -86,13 +86,15 @@ void              png_fcTL_print(struct png_fcTL *fctl);
 struct png_IEND  *png_IEND_create(void);
 struct png_chunk *png_IEND_dump(struct png_IEND *iend);
 
-struct png_image *png_create(void);
-struct png_image *png_load(char *fname);
-int               png_write(struct png_image *png, char *filename);
-void              png_print(struct png_image *png);
-int               png_chunk_add_from_png(struct png_image *png_out, struct png_image *png_in, int id);
-int               png_chunk_add(struct png_image *png, struct png_chunk *pc, void *spec);
-int               png_chunk_by_type(struct png_image *png, char *type, int start_id);
-int png_width(struct png_image *png);
-int png_height(struct png_image *png);
+struct png_chunk *png_fdAT_from_IDAT(struct png_chunk *pc_in, uint32_t seq);
+
+struct png_img *png_img_create(void);
+struct png_img *png_img_load(char *fname);
+int             png_img_write(struct png_img *png, char *filename);
+void            png_img_print(struct png_img *png);
+int             png_img_chunk_add_from_png(struct png_img *png_out, struct png_img *png_in, int id);
+int             png_img_chunk_add(struct png_img *png, struct png_chunk *pc, void *spec);
+int             png_img_chunk_by_type(struct png_img *png, char *type, int start_id);
+int             png_img_width(struct png_img *png);
+int             png_img_height(struct png_img *png);
 #endif
