@@ -18,7 +18,7 @@ $(BINARIES): $(INCLUDES) $(OBJECTS) $(BIN_SRC)
 
 clean:
 	echo "$(BIN_SRC)"
-	rm -rf $(BINARIES) $(OBJECTS) core myout.apng
+	rm -rf $(BINARIES) $(OBJECTS) core out/myout.apng
 
 test:
 	./pngtest test.png
@@ -27,7 +27,7 @@ test2:
 	./pngtest test.apng
 
 test3:
-	rm -f myout.apng ; ./png2apng myout.apng img/*24px*
+	rm -f out/myout.apng ; ./png2apng out/myout.apng img/*48px*
 
 
 .PHONY: clean test test2 test3

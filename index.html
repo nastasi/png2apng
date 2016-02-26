@@ -1,0 +1,75 @@
+<html>
+<body>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+This is the content This is the content This is the content This is the content This is the content<br>
+<img id="the_icon" style="position: absolute;" src="myout.apng">
+</body>
+<script>
+var img = document.getElementById("the_icon");
+var x = 0;
+var x_dir = 1;
+var y = 0;
+var y_dir = 1;
+
+var cb = function () {
+    var new_x, new_y;
+
+    new_x = x + (x_dir * 5);
+    if (new_x > 800 || new_x < 0) {
+        x_dir = x_dir * -1;
+        new_x = x + (x_dir * 5);
+    }    
+
+    new_y = y + (y_dir * 5);
+    if (new_y > 600 || new_y < 0) {
+        y_dir = y_dir * -1;
+        new_y = y + (y_dir * 5);
+    }    
+
+    x = new_x;
+    y = new_y;
+    img.style.left = x;
+    img.style.top = y;
+}
+
+setInterval(cb, 100);
+
+</script>
+</html>
