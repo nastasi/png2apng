@@ -22,6 +22,25 @@
 #include <string.h>
 #include <subpng.h>
 
+int filename2msec(char *s);
+
+int filename2msec(char *s)
+{
+    char bf[32], *b, *e;
+
+    if ((e = strstr(s, "ms)")) == NULL) {
+        return 1000;
+    }
+    for (b = (e - 1) ; b >= s ; b--) {
+        if (*b == '(') {
+            memcpy(bf, b+1, e - b - 1);
+            bf[e - b - 1] = '\0';
+            break;
+        }
+    }
+    return atoi(bf);
+}
+
 int main(int argc, char *argv[])
 {
     char *foutname;
@@ -48,7 +67,7 @@ int main(int argc, char *argv[])
     }
 
     if ((png_out = png_img_create()) == NULL) {
-        exit(3);
+        exit(2);
     }
 
     for (i = 2 ; i < argc ; i++) {
@@ -65,7 +84,7 @@ int main(int argc, char *argv[])
         fctl_in.sequence_number = seq++;
         fctl_in.width = png_img_width(png_in);
         fctl_in.height = png_img_height(png_in);
-        fctl_in.delay_num = 50;
+        fctl_in.delay_num = filename2msec(argv[i]);
         fctl_in.delay_den = 1000;
 
         if ((fctl = png_fcTL_create(&fctl_in)) == NULL)
